@@ -1,45 +1,21 @@
 import argparse
 import csv
+import sqlite3
+import db
 from collections import defaultdict
 
-def import_csvs_maindf_helper(file_name):
-    vals = defaultdict(list)
-    with open(file_name, 'r') as csvfile:
-        reader = csv.reader(csvfile)
-        rows = list(reader)[1:]
-
-        # pre-iterate data to find all platforms
-        owned_on = 4
-        sfs = list(set([sf for row in rows 
-                      for sf in row[owned_on].split(',')
-                      if sf != '']))
-
-        for title, release_year, linux, play_more, owned_on, couch, passes, via in rows:
-            vals['title'].append(title)
-            vals['release_year'].append(None if release_year == '' else int(release_year))
-            vals['linux'].append(linux == 1)
-            vals['play_more'].append(play_more == 1)
-            vals['couch'].append(couch == 1)
-            vals['passes'].append(0 if passes == '' or passes == 'eternal' else int(passes))
-            vals['eternal'].append(passes == 'eternal')
-            vals['via'].append(via)
-
-            # storefronts are a special case, need to break up list
-            for sf in sfs: 
-                sfp = 'owned_%s' % sf
-                vals[sfp].append(sf in owned_on)
-
-    testlen = lambda x: len(x) == len(vals['title'])
-    assert(all(map(testlen, vals.values())))
-    
-    return pd.DataFrame.from_dict(vals)
-
-#def import_csvs_sessiondf_helper(session_file):
-
 def import_csvs(args):
-    main_df = import_csvs_maindf_helper(args.file_name)
-    if args.sessions:
+    conn = sqlite3.connect(':memory:')
+    db.create_schema(conn)
 
+    with open(args.file_name, 'r') as csvfile:
+        db.import_gdoc_games(conn, csv.reader(csvfile))
+
+    if args.sessions:
+        with open(args.sessions, 'r') as csvfile:
+            db.import_gdoc_sessions(conn, csv.reader(csvfile))
+
+    db.dump_csvs(conn, 'temp')
     
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description="Manage a library of video games.")
