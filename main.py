@@ -3,6 +3,7 @@ import csv
 import sqlite3
 import db
 import os
+from datetime import date
 
 def handle_import(args):
     conn = sqlite3.connect(':memory:')
@@ -36,7 +37,12 @@ def handle_sessions(args):
     path = os.path.expanduser(args.data)
     db.load_csvs(conn, path)
 
-    print(db.show_sessions(conn))
+    sessions = db.show_sessions(conn,
+            active = not args.inactive,
+            session_year = None if args.year == 0 else int(args.year),
+            status = 'stuck' if args.stuck else None)
+
+    print(sessions)
 
 
 if __name__ == '__main__':
@@ -47,6 +53,15 @@ if __name__ == '__main__':
 
     # Parameteres for listing sessions
     sessions_parser = subparsers.add_parser('sessions', help='List sessions of games.')
+    sessions_parser.add_argument('-i', '--inactive', help='Show inactive sessions.',
+            action='store_true')
+    sessions_parser.add_argument('-y', '--year',
+            help='Limit sessions to a specific year. By default, current year. 0 for all years.',
+            action='store', default=date.today().year)
+    sessions_parser.add_argument('-s', '--stuck',
+            help='Show only sessions which "stuck" (made an impression).',
+            action='store_true')
+        
     sessions_parser.set_defaults(func=handle_sessions)
 
     # Parameters for finishing sessions
