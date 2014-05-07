@@ -109,6 +109,35 @@ def dump_csvs(conn, fn_prefix):
             for row in conn.execute('SELECT * FROM sessions'):
                 writer.writerow(row)
 
+def load_csvs(conn, fn_prefix):
+    with conn:
+        with open("%s_game.csv" % fn_prefix, 'r') as game:
+            reader = csv.reader(game)
+            for i, row in enumerate(reader):
+                if i == 0: # skip title line
+                    continue
+                conn.execute('''insert into game(id, title, release_year,
+                    linux, play_more, couch, passes, via, eternal)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
+                    
+        with open("%s_own.csv" % fn_prefix, 'r') as own:
+            reader = csv.reader(own)
+            for i, row in enumerate(reader):
+                if i == 0: # skip title line
+                    continue
+                conn.execute('''insert into own(game_id, storefront)
+                    values (?, ?)''', row)
+
+        with open("%s_session.csv" % fn_prefix, 'r') as session:
+            reader = csv.reader(session)
+            for i, row in enumerate(reader):
+                if i == 0: # skip title line
+                    continue
+                conn.execute('''insert into sessions(game_id, started,
+                    outcome)
+                    values (?, ?, ?)''', row)
+
+
 
 
 

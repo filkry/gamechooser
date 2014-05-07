@@ -4,7 +4,7 @@ import sqlite3
 import db
 from collections import defaultdict
 
-def import_csvs(args):
+def handle_import(args):
     conn = sqlite3.connect(':memory:')
     db.create_schema(conn)
 
@@ -16,6 +16,11 @@ def import_csvs(args):
             db.import_gdoc_sessions(conn, csv.reader(csvfile))
 
     db.dump_csvs(conn, 'temp')
+
+def handle_select(args):
+    conn = sqlite3.connect(':memory:')
+    db.create_schema(conn)
+    db.load_csvs(conn, args.file_name)
     
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description="Manage a library of video games.")
@@ -26,12 +31,14 @@ if __name__ == '__main__':
 
     # Parameters for selecting a game to play
     select_parser = subparsers.add_parser('select', help='Select a random game to play.')
+    select_parser.add_argument('file_name', help='Path to data storage csvs.')
+    select_parser.set_defaults(func=handle_select)
 
     # Parameters for importing games from Google Docs
     import_parser = subparsers.add_parser('import', help='Import games from google docs.')
     import_parser.add_argument('file_name', help='Path to file with the main list of games from Google docs.')
     import_parser.add_argument('--sessions', action='store', help='Path to file with list of sessions from Google docs.')
-    import_parser.set_defaults(func=import_csvs)
+    import_parser.set_defaults(func=handle_import)
 
     args = arg_parser.parse_args()
     args.func(args)
