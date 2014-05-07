@@ -5,8 +5,14 @@ import db
 import os
 from datetime import date
 
+def format_game(game_record, platforms):
+    output = "{title:<40.40}  {release_year:>4}  {linux:>5}  {couch:>5}  {play_more:>4}  {passes:>6}  {via:<20.20}"
+    platform_output = "  {0:<20.20}".format(', '.join(platforms))
+    return output.format(**game_record) + platform_output 
+
 def handle_import(args):
     conn = sqlite3.connect(':memory:')
+    conn.row_factory = sqlite3.Row
     db.create_schema(conn)
     path = os.path.expanduser(args.data)
 
@@ -22,6 +28,7 @@ def handle_import(args):
 
 def handle_select(args):
     conn = sqlite3.connect(':memory:')
+    conn.row_factory = sqlite3.Row
     db.create_schema(conn)
     path = os.path.expanduser(args.data)
     db.load_csvs(conn, path)
@@ -29,7 +36,15 @@ def handle_select(args):
     games = db.select_random_games(conn, n = args.n, before_this_year = True if args.old else None,
             linux = True if args.linux else None, couch = True if args.couch else None,
             owned = False if args.buy else True)
-    print(games)
+
+
+    title = format_game({'title': 'title', 'release_year': 'year', 'linux': 'linux',
+        'couch': 'couch', 'play_more': 'more', 'passes': 'passes', 'via': 'via'}, ['storefronts'])
+    print('\033[1m' + title + '\033[0m')
+
+    for game in games:
+        platforms = db.storefronts(conn, game['id'])
+        print(format_game(game, platforms))
 
 def handle_sessions(args):
     conn = sqlite3.connect(':memory:')

@@ -140,6 +140,11 @@ def load_csvs(conn, fn_prefix):
                     outcome)
                     values (?, ?, ?)''', row)
 
+def storefronts(conn, gid):
+    with conn:
+        rows = conn.execute('SELECT storefront FROM own WHERE game_id=?', (gid,))
+        return [row['storefront'] for row in rows]
+
 def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         play_more = True, couch = None, max_passes = 2, owned=True):
     with conn:
@@ -169,9 +174,13 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         conditions.append('passes <= ' + str(max_passes))
 
         if owned:
-            select = 'SELECT * FROM own JOIN game ON own.game_id=game.id'
+            select = '''SELECT id, title, release_year,
+                linux, play_more, couch, passes, via, eternal
+                FROM own JOIN game ON own.game_id=game.id'''
         else:
-            select = 'SELECT * FROM game'
+            select = '''SELECT id, title, release_year,
+                linux, play_more, couch, passes, via, eternal
+                FROM game'''
 
         query = select + ' WHERE ' + ' AND '.join(conditions) + ' ORDER BY RANDOM() LIMIT ' + str(n)
         return list(conn.execute(query))
