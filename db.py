@@ -1,6 +1,7 @@
 import sqlite3
 import datetime
 import csv
+from datetime import date
 
 def create_schema(conn):
     with conn:
@@ -64,6 +65,8 @@ def add_game(conn, title, release_year, linux, play_more, couch, passes, via, et
     assert(game_id != None)
 
     for sf in storefronts:
+        if sf == '':
+            continue
         c.execute('''insert into
             own(game_id, storefront) values(?, ?)''',
             (game_id, sf))
@@ -137,7 +140,62 @@ def load_csvs(conn, fn_prefix):
                     outcome)
                     values (?, ?, ?)''', row)
 
+def select_random_games(conn, n = 1, before_this_year = None, linux = None,
+        play_more = True, couch = None, max_passes = 2, owned=True):
+    with conn:
+        # Construct query
+        conditions = []
 
+        if before_this_year is True:
+            conditions.append('release_year < ' + str(date.today().year))
+        elif before_this_year is False:
+            conditions.append('release_year == ' + str(date.today().year))
+
+        if linux == True:
+            conditions.append('linux == 1')
+        elif linux == False:
+            conditions.append('linux == 0')
+
+        if play_more == True:
+            conditions.append('play_more == 1')
+        elif play_more == False:
+            conditions.append('play_more == 0')
+
+        if couch == True:
+            conditions.append('couch == 1')
+        elif couch == False:
+            conditions.append('couch == 0')
+
+        conditions.append('passes <= ' + str(max_passes))
+
+        if owned:
+            select = 'SELECT * FROM own JOIN game ON own.game_id=game.id'
+        else:
+            select = 'SELECT * FROM game'
+
+        query = select + ' WHERE ' + ' AND '.join(conditions) + ' ORDER BY RANDOM() LIMIT ' + str(n)
+        return list(conn.execute(query))
+
+def show_sessions(conn, active = True, status = None,
+        session_year = date.today().year):
+    with conn:
+        conditions = []
+
+        if active is True:
+            conditions.append('outcome is null OR outcome == ""')
+        elif active is False:
+            conditions.append('outcome is not null AND outcome != ""')
+
+        if status is not None:
+            conditions.append('outcome == ' + status)
+
+        if session_year is not None:
+            conditions.append('started BETWEEN "%i-01-01" AND "%i-12-31"' % (session_year, session_year))
+
+        query = '''SELECT game_id, title, started, outcome FROM 
+            sessions AS s JOIN game AS g ON s.game_id=g.id WHERE ''' + ' AND '.join(conditions)
+
+        return list(conn.execute(query))
 
 
 
