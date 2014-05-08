@@ -5,10 +5,34 @@ import db
 import os
 from datetime import date
 
-def format_game(game_record, platforms):
-    output = "{title:<40.40}  {release_year:>4}  {linux:>5}  {couch:>5}  {play_more:>4}  {passes:>6}  {via:<20.20}"
-    platform_output = "  {0:<20.20}".format(', '.join(platforms))
-    return output.format(**game_record) + platform_output 
+def format_game(game_record, platforms, show_linux = False, show_couch = False,
+        show_play = False, show_via = True, show_platforms = True,
+        show_year = False):
+    sections = ['{title:<40.40}']
+
+    if show_year:
+        sections.append('{release_year:>4}')
+
+    if show_linux:
+        sections.append('{linux:>5}')
+
+    if show_couch:
+        sections.append('{couch:>5}')
+
+    if show_play:
+        sections.append('{play_more:>4}')
+
+    sections.append('{passes:>6}')
+
+    if show_via:
+        sections.append('{via:<20.20}')
+
+    output = '  '.join(sections).format(**game_record)
+
+    if show_platforms:
+        output += "  {0:<20.20}".format(', '.join(platforms))
+
+    return output
 
 def handle_import(args):
     conn = sqlite3.connect(':memory:')
@@ -33,18 +57,59 @@ def handle_select(args):
     path = os.path.expanduser(args.data)
     db.load_csvs(conn, path)
 
-    games = db.select_random_games(conn, n = args.n, before_this_year = True if args.old else None,
-            linux = True if args.linux else None, couch = True if args.couch else None,
-            owned = False if args.buy else True)
+    while True:
+        games = db.select_random_games(conn, n = args.n, before_this_year = True if args.old else None,
+                linux = True if args.linux else None, couch = True if args.couch else None,
+                owned = False if args.buy else True, max_passes = args.max_passes)
 
+        title = format_game({'title': 'title', 'release_year': 'year', 'linux': 'linux',
+            'couch': 'couch', 'play_more': 'more', 'passes': 'passes', 'via': 'via'}, ['storefronts'])
+        print('\033[1m' + '   ' + title + '\033[0m')
 
-    title = format_game({'title': 'title', 'release_year': 'year', 'linux': 'linux',
-        'couch': 'couch', 'play_more': 'more', 'passes': 'passes', 'via': 'via'}, ['storefronts'])
-    print('\033[1m' + title + '\033[0m')
+        for i, game in enumerate(games):
+            platforms = db.storefronts(conn, game['id'])
+            print('{0:<3.3}'.format(str(i+1)) + format_game(game, platforms))
 
-    for game in games:
-        platforms = db.storefronts(conn, game['id'])
-        print(format_game(game, platforms))
+        # If we're just displaying a selection, finish here
+        if not args.pick:
+            break
+
+        print('\nChoose a game to create a new active session for. Input 0 to pass on all games. Q to abort.')
+        selection = input("Selection: ")
+
+        if selection == 'q' or selection == 'Q':
+            break
+
+        selection = int(selection)
+
+        if selection == 0:
+            # Increment the pass counter on each game
+            for game in games:
+                # If the game is not out yet, don't increment
+                if game['release_year'] != '' and int(game['release_year']) == date.today().year:
+                    freebie = input('%s was released this year. Has it been released? Y/N: ' % game['title'])
+                    if freebie == 'N' or freebie == 'n':
+                        continue
+                new_passes = db.inc_pass(conn, game['id'])
+
+                # If max passes, give option to make game eternal
+                if new_passes > args.max_passes:
+                    eternal = input('You have passed on %s enough times that it will stop being suggested. You can avoid this by making this game "eternal". Y/N: ' % game['title'])
+                    if eternal == 'Y' or eternal == 'y':
+                        db.make_eternal(conn, game['id'])
+
+        else:
+            # Create an active session
+            game = games[selection - 1]
+            db.create_session(conn, game['id'])
+            print('Created a new session of %s.' % game['title'])
+            break
+
+        print('\n')
+
+    # So scared of commitment
+    #db.dump_csvs(conn, path)
+        
 
 def handle_sessions(args):
     conn = sqlite3.connect(':memory:')
@@ -97,6 +162,12 @@ if __name__ == '__main__':
             action='store_true')
     select_parser.add_argument('-n', help='Number of games to select.',
             action='store', default='1')
+    select_parser.add_argument('-m', '--max_passes',
+            help='Maximum number of times a game can be passed before it is retired.',
+            action='store', default=2)
+    select_parser.add_argument('-p', '--pick',
+            help='Start game picking algorithm after showing selection.',
+            action='store_true')
     select_parser.set_defaults(func=handle_select)
 
     # Parameters for importing games from Google Docs

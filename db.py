@@ -207,5 +207,20 @@ def show_sessions(conn, active = True, status = None,
 
         return list(conn.execute(query))
 
+def create_session(conn, game_id):
+    with conn:
+        conn.execute('INSERT INTO sessions(game_id, started) VALUES (?, ?)',
+                (game_id, date.today()))
 
+
+def inc_pass(conn, game_id):
+    with conn:
+        conn.execute('UPDATE game SET passes = passes + 1 WHERE id = ?', (game_id,))
+        for row in conn.execute('SELECT passes FROM game WHERE id = ?', (game_id,)):
+            return row['passes']
+        return None
+
+def make_eternal(conn, game_id):
+    with conn:
+        conn.execute('UPDATE game SET eternal = 1 WHERE id = ?', (game_id,))
 
