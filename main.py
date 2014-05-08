@@ -108,11 +108,24 @@ def handle_select(args):
         print('\n')
 
     # So scared of commitment
-    #db.dump_csvs(conn, path)
-        
+    db.dump_csvs(conn, path)
+
+def format_session(session_record, show_started= True, show_outcome = True):
+    sections = ['{title:<40.40}']
+
+    if show_started:
+        sections.append('{started:>10.10}')
+
+    if show_outcome:
+        sections.append('{outcome:>10.10}')
+
+    output = '  '.join(sections).format(**session_record)
+
+    return output
 
 def handle_sessions(args):
     conn = sqlite3.connect(':memory:')
+    conn.row_factory = sqlite3.Row
     db.create_schema(conn)
     path = os.path.expanduser(args.data)
     db.load_csvs(conn, path)
@@ -122,7 +135,11 @@ def handle_sessions(args):
             session_year = None if args.year == 0 else int(args.year),
             status = 'stuck' if args.stuck else None)
 
-    print(sessions)
+    title = format_session({'title': 'title', 'started': 'started', 'outcome': 'outcome'})
+    print('\033[1m' + '   ' + title + '\033[0m')
+
+    for i, s in enumerate(sessions):
+        print('{0:<3.3}'.format(str(i+1)) + format_session(s))
 
 
 if __name__ == '__main__':

@@ -98,19 +98,21 @@ def dump_csvs(conn, fn_prefix):
                 'play_more', 'couch', 'passes', 'via',
                 'eternal'])
             for row in conn.execute('SELECT * FROM game'):
-                writer.writerow(row)
+                writer.writerow([row['id'], row['title'], row['release_year'],
+                        row['linux'], row['play_more'], row['couch'],
+                        row['passes'], row['via'], row['eternal']])
 
         with open("%s_own.csv" % fn_prefix, 'w') as own:
             writer = csv.writer(own)
             writer.writerow(['game_id', 'storefront'])
             for row in conn.execute('SELECT * FROM own'):
-                writer.writerow(row)
+                writer.writerow([row['game_id'], row['storefront']])
 
         with open("%s_session.csv" % fn_prefix, 'w') as session:
             writer = csv.writer(session)
             writer.writerow(['game_id', 'started', 'outcome'])
             for row in conn.execute('SELECT * FROM sessions'):
-                writer.writerow(row)
+                writer.writerow([row['game_id'], row['started'], row['outcome']])
 
 def load_csvs(conn, fn_prefix):
     with conn:
