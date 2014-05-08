@@ -226,3 +226,11 @@ def make_eternal(conn, game_id):
     with conn:
         conn.execute('UPDATE game SET eternal = 1 WHERE id = ?', (game_id,))
 
+def finish_session(conn, game_id, status):
+    with conn:
+        conn.execute('UPDATE sessions SET outcome = ? WHERE game_id == ? AND outcome == ""',
+                (status, game_id))
+
+def retire_game(conn, game_id):
+    with conn:
+        conn.execute('UPDATE game SET play_more = 0 WHERE id == ?', (game_id,))

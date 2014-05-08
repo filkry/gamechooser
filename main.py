@@ -123,6 +123,14 @@ def format_session(session_record, show_started= True, show_outcome = True):
 
     return output
 
+def print_sessions(conn, session_records):
+    title = format_session({'title': 'title', 'started': 'started', 'outcome': 'outcome'})
+    print('\033[1m' + '   ' + title + '\033[0m')
+
+    for i, s in enumerate(session_records):
+        print('{0:<3.3}'.format(str(i+1)) + format_session(s))
+
+
 def handle_sessions(args):
     conn = sqlite3.connect(':memory:')
     conn.row_factory = sqlite3.Row
@@ -130,18 +138,51 @@ def handle_sessions(args):
     path = os.path.expanduser(args.data)
     db.load_csvs(conn, path)
 
-    sessions = db.show_sessions(conn,
-            active = not args.inactive,
+    sessions = db.show_sessions(conn, active = not args.inactive,
             session_year = None if args.year == 0 else int(args.year),
             status = 'stuck' if args.stuck else None)
 
-    title = format_session({'title': 'title', 'started': 'started', 'outcome': 'outcome'})
-    print('\033[1m' + '   ' + title + '\033[0m')
+    print_sessions(conn, sessions)
 
-    for i, s in enumerate(sessions):
-        print('{0:<3.3}'.format(str(i+1)) + format_session(s))
+def handle_finish(conn):
+    conn = sqlite3.connect(':memory:')
+    conn.row_factory = sqlite3.Row
+    db.create_schema(conn)
+    path = os.path.expanduser(args.data)
+    db.load_csvs(conn, path)
 
+    sessions = db.show_sessions(conn, active = True)
+    print_sessions(conn, sessions)
 
+    finish = input('Input a session to finish, or Q to abort: ')
+    if finish == 'q' or finish == 'Q':
+        return
+    finish = int(finish)
+
+    finish_session = sessions[finish - 1]
+    status = input('Was %s a transient (t) or sticking (s) experience: ' % finish_session['title'])
+    if status == 'q' or status == 'Q':
+        return
+
+    status = 'transient' if status == 't' or status == 'T' else 'stuck'
+
+    # TODO: allow delays
+    more = input('''How long until %s should be suggested again?
+1) any time
+4) done forever
+q) abort
+Input response: ''' % finish_session['title'])
+    if more == 'q' or more == 'Q':
+        return
+
+    if int(more) == '4':
+        db.retire_game(finish_session['game_id'])
+
+    db.finish_session(conn, finish_session['game_id'], status)
+
+    db.dump_csvs(conn, path)
+
+    
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description="Manage a library of video games.")
     arg_parser.add_argument('-d', '--data', help='location for storing data files',
@@ -162,7 +203,8 @@ if __name__ == '__main__':
     sessions_parser.set_defaults(func=handle_sessions)
 
     # Parameters for finishing sessions
-    finishs_parser = subparsers.add_parser('finish', help='Finish a game session.')
+    finish_parser = subparsers.add_parser('finish', help='Finish a game session.')
+    finish_parser.set_defaults(func=handle_finish)
 
     # Parameters for starting sessions
     starts_parser = subparsers.add_parser('start', help='Start a session.')
