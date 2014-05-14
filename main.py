@@ -175,8 +175,8 @@ Input response: ''' % finish_session['title'])
     if more == 'q' or more == 'Q':
         return
 
-    if int(more) == '4':
-        db.retire_game(finish_session['game_id'])
+    if int(more) == 4:
+        db.retire_game(conn, finish_session['game_id'])
 
     db.finish_session(conn, finish_session['game_id'], status)
 
