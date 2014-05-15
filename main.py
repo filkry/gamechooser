@@ -92,7 +92,7 @@ def handle_select(args):
                 passed_ids.append(game['id'])
         
                 # If the game is not out yet, don't increment
-                if game['release_year'] != '' and int(game['release_year']) == date.today().year:
+                if game['release_year'] != None and game['release_year'] != '' and int(game['release_year']) == date.today().year:
                     freebie = input('%s was released this year. Has it been released? Y/N: ' % game['title'])
                     if freebie == 'N' or freebie == 'n':
                         continue
