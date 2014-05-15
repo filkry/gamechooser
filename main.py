@@ -57,10 +57,12 @@ def handle_select(args):
     path = os.path.expanduser(args.data)
     db.load_csvs(conn, path)
 
+    passed_ids = []
     while True:
         games = db.select_random_games(conn, n = args.n, before_this_year = True if args.old else None,
                 linux = True if args.linux else None, couch = True if args.couch else None,
-                owned = False if args.buy else True, max_passes = args.max_passes)
+                owned = False if args.buy else True, max_passes = args.max_passes,
+                exclude_ids = passed_ids)
 
         title = format_game({'title': 'title', 'release_year': 'year', 'linux': 'linux',
             'couch': 'couch', 'play_more': 'more', 'passes': 'passes', 'via': 'via'}, ['storefronts'])
@@ -85,6 +87,9 @@ def handle_select(args):
         if selection == 0:
             # Increment the pass counter on each game
             for game in games:
+                # Don't propose game again
+                passed_ids.append(game['id'])
+        
                 # If the game is not out yet, don't increment
                 if game['release_year'] != '' and int(game['release_year']) == date.today().year:
                     freebie = input('%s was released this year. Has it been released? Y/N: ' % game['title'])

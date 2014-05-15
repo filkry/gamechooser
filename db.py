@@ -148,7 +148,8 @@ def storefronts(conn, gid):
         return [row['storefront'] for row in rows]
 
 def select_random_games(conn, n = 1, before_this_year = None, linux = None,
-        play_more = True, couch = None, max_passes = 2, owned=True):
+        play_more = True, couch = None, max_passes = 2, owned=True,
+        exclude_ids = []):
     with conn:
         # Construct query
         conditions = []
@@ -184,7 +185,14 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
                 linux, play_more, couch, passes, via, eternal
                 FROM game'''
 
-        query = select + ' WHERE ' + ' AND '.join(conditions) + ' ORDER BY RANDOM() LIMIT ' + str(n)
+        query = select + ' WHERE ' + ' AND '.join(conditions) 
+
+        # exclude values already proposed
+        if len(exclude_ids) > 0:
+            query += ' AND id NOT IN (' + ','.join([str(i) for i in exclude_ids]) + ')'
+
+        query += ' ORDER BY RANDOM() LIMIT ' + str(n)
+        print(query)
         return list(conn.execute(query))
 
 def show_sessions(conn, active = True, status = None,
