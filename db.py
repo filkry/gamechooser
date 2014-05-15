@@ -187,12 +187,17 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
 
         query = select + ' WHERE ' + ' AND '.join(conditions) 
 
-        # exclude values already proposed
-        if len(exclude_ids) > 0:
-            query += ' AND id NOT IN (' + ','.join([str(i) for i in exclude_ids]) + ')'
+        # get active session game_ids
+        active_ids = [row['game_id'] for row in show_sessions(conn)]
+
+        # exclude games with ids in exclude list
+        # and games with active sessions
+        # this is slower than doing this with joins, but for our
+        # purposes it is sufficient
+        if len(exclude_ids + active_ids) > 0:
+            query += ' AND id NOT IN (' + ','.join([str(i) for i in exclude_ids + active_ids]) + ')'
 
         query += ' ORDER BY RANDOM() LIMIT ' + str(n)
-        print(query)
         return list(conn.execute(query))
 
 def show_sessions(conn, active = True, status = None,
