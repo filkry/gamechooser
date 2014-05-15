@@ -9,7 +9,7 @@ def create_schema(conn):
             (id integer primary key autoincrement,
             title text, release_year integer, linux integer,
             play_more integer, couch integer, passes integer,
-            via text, eternal integer)''')
+            via text, eternal integer, next_valid_date datetime)''')
 
         conn.execute('''CREATE TABLE own
             (game_id integer, storefront text,
@@ -96,11 +96,12 @@ def dump_csvs(conn, fn_prefix):
             writer = csv.writer(game)
             writer.writerow(['id', 'title', 'release_year', 'linux',
                 'play_more', 'couch', 'passes', 'via',
-                'eternal'])
+                'eternal', 'next_valid_date'])
             for row in conn.execute('SELECT * FROM game'):
                 writer.writerow([row['id'], row['title'], row['release_year'],
                         row['linux'], row['play_more'], row['couch'],
-                        row['passes'], row['via'], row['eternal']])
+                        row['passes'], row['via'], row['eternal'],
+                        row['next_valid_date']])
 
         with open("%s_own.csv" % fn_prefix, 'w') as own:
             writer = csv.writer(own)
@@ -121,9 +122,14 @@ def load_csvs(conn, fn_prefix):
             for i, row in enumerate(reader):
                 if i == 0: # skip title line
                     continue
+                # handle addition of rows
+                if len(row) == 9:
+                    row.append(None)
+                row = [(None if len(r) == 0 else r) for r in row]
                 conn.execute('''insert into game(id, title, release_year,
-                    linux, play_more, couch, passes, via, eternal)
-                    values (?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
+                    linux, play_more, couch, passes, via, eternal,
+                    next_valid_date)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
                     
         with open("%s_own.csv" % fn_prefix, 'r') as own:
             reader = csv.reader(own)
@@ -178,14 +184,21 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
 
         if owned:
             select = '''SELECT id, title, release_year,
-                linux, play_more, couch, passes, via, eternal
+                linux, play_more, couch, passes, via, eternal,
+                next_valid_date
                 FROM own JOIN game ON own.game_id=game.id'''
         else:
             select = '''SELECT id, title, release_year,
-                linux, play_more, couch, passes, via, eternal
+                linux, play_more, couch, passes, via, eternal,
+                next_valid_date
                 FROM game'''
 
         query = select + ' WHERE ' + ' AND '.join(conditions) 
+
+        day, month, year = date.today().day, date.today().month, date.today().year
+        # exclude games that have been delayed for another proposal
+        query += ''' AND (next_valid_date IS NULL OR
+            next_valid_date <= "%i-%i-%i")''' % (year, month, day)
 
         # get active session game_ids
         active_ids = [row['game_id'] for row in show_sessions(conn)]
