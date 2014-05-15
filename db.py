@@ -125,7 +125,7 @@ def load_csvs(conn, fn_prefix):
                 # handle addition of rows
                 if len(row) == 9:
                     row.append(None)
-                row = [(None if len(r) == 0 else r) for r in row]
+                row = [(None if r == '' else r) for r in row]
                 conn.execute('''insert into game(id, title, release_year,
                     linux, play_more, couch, passes, via, eternal,
                     next_valid_date)
@@ -248,9 +248,17 @@ def inc_pass(conn, game_id):
             return row['passes']
         return None
 
+def set_next_valid_date(conn, game_id, next_valid_date):
+    c = conn.cursor()
+    c.execute('UPDATE game SET next_valid_date = ? WHERE id == ?',
+            (next_valid_date, game_id))
+
+    print(c.rowcount)
+    conn.commit()
+
 def make_eternal(conn, game_id):
     with conn:
-        conn.execute('UPDATE game SET eternal = 1 WHERE id = ?', (game_id,))
+        conn.execute('UPDATE game SET eternal = 1 WHERE id == ?', (game_id,))
 
 def finish_session(conn, game_id, status):
     with conn:

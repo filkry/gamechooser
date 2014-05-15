@@ -4,6 +4,7 @@ import sqlite3
 import db
 import os
 from datetime import date
+import datetime
 
 def format_game(game_record, platforms, show_linux = False, show_couch = False,
         show_play = False, show_via = True, show_platforms = True,
@@ -174,13 +175,21 @@ def handle_finish(conn):
     # TODO: allow delays
     more = input('''How long until %s should be suggested again?
 1) any time
+2) one month
+3) one year
 4) done forever
 q) abort
 Input response: ''' % finish_session['title'])
     if more == 'q' or more == 'Q':
         return
 
-    if int(more) == 4:
+    if int(more) == 2:
+        db.set_next_valid_date(conn, finish_session['game_id'],
+            date.today() + datetime.timedelta(days = 31))
+    elif int(more) == 3:
+        db.set_next_valid_date(conn, finish_session['game_id'],
+            date.today() + datetime.timedelta(days = 365))
+    elif int(more) == 4:
         db.retire_game(conn, finish_session['game_id'])
 
     db.finish_session(conn, finish_session['game_id'], status)
