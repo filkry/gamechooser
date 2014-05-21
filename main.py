@@ -200,7 +200,7 @@ Input response: ''' % finish_session['title'])
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser(description="Manage a library of video games.")
     arg_parser.add_argument('-d', '--data', help='location for storing data files',
-            action='store', default='~/Dropbox/gamechooser/')
+            action='store', default='~/SpiderOak Hive/gamechooser/')
     subparsers = arg_parser.add_subparsers()
 
     # Parameteres for listing sessions
