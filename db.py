@@ -1,6 +1,7 @@
 import sqlite3
 import datetime
 import csv
+import Levenshtein
 from datetime import date
 
 def create_schema(conn):
@@ -51,6 +52,14 @@ def import_gdoc_sessions(conn, rows):
 
     print("Added %i games due to mismatched titles." % skipped)
 
+def search_game(conn, title):
+    with conn:
+        games = list(conn.execute('''SELECT id, title FROM game'''))
+        
+        games = sorted(games,
+                key = lambda x: Levenshtein.distance(x[1].lower(), title.lower()))
+
+        return games
 
 def add_game(conn, title, release_year, linux, play_more, couch, passes, via, eternal, storefronts):
     c = conn.cursor()

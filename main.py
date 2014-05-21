@@ -70,6 +70,32 @@ def handle_add(args):
 
     db.dump_csvs(conn, path)
 
+def handle_starts(args):
+    conn = sqlite3.connect(':memory:')
+    conn.row_factory = sqlite3.Row
+    db.create_schema(conn)
+    path = os.path.expanduser(args.data)
+    db.load_csvs(conn, path)
+
+    games = db.search_game(conn, args.title)[:5]
+
+    game_query = 'Which game?\n'
+    for i, game in enumerate(games):
+        game_query += '%i) %s\n' % (i+1, games[i][1])
+    game_query += 'q) abort\nInput response: '
+
+    which_game = input(game_query)
+    if which_game.lower() == 'q':
+        return
+
+    gid, title = games[int(which_game) - 1]
+    db.create_session(conn, gid)
+
+    print('Created session for %s' % (title))
+
+    db.dump_csvs(conn, path)
+
+
 def handle_select(args):
     conn = sqlite3.connect(':memory:')
     conn.row_factory = sqlite3.Row
@@ -241,6 +267,8 @@ if __name__ == '__main__':
 
     # Parameters for starting sessions
     starts_parser = subparsers.add_parser('start', help='Start a session.')
+    starts_parser.add_argument('title', help='Title of game to start a session for.')
+    starts_parser.set_defaults(func=handle_starts)
 
     # Parameters for selecting a game to play
     select_parser = subparsers.add_parser('select', help='Select a random game to play.')
