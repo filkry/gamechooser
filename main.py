@@ -6,10 +6,15 @@ import os
 from datetime import date
 import datetime
 
+def dict_from_row(row):
+    return dict(zip(row.keys(), row))
+
 def format_game(game_record, platforms, show_linux = False, show_couch = False,
         show_play = False, show_via = True, show_platforms = True,
         show_year = False):
     sections = ['{title:<40.40}']
+
+    game_dict = dict_from_row(game_record)
 
     if show_year:
         sections.append('{release_year:>4}')
@@ -27,8 +32,11 @@ def format_game(game_record, platforms, show_linux = False, show_couch = False,
 
     if show_via:
         sections.append('{via:<20.20}')
+        if game_dict['via'] is None:
+            game_dict['via'] = ''
 
-    output = '  '.join(sections).format(**game_record)
+    format_str = ' '.join(sections)
+    output = format_str.format(**game_dict)
 
     if show_platforms:
         output += "  {0:<20.20}".format(', '.join(platforms))
