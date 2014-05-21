@@ -51,6 +51,25 @@ def handle_import(args):
 
     db.dump_csvs(conn, path)
 
+def handle_add(args):
+    conn = sqlite3.connect(':memory:')
+    conn.row_factory = sqlite3.Row
+    db.create_schema(conn)
+    path = os.path.expanduser(args.data)
+    db.load_csvs(conn, path)
+
+    title = input("Game title: ")
+    year = input("Release year: ")
+    year = int(year) if len(year) > 0 else None
+    linux = True if input("Linux (y/n): ").lower() == 'y' else False
+    couch = True if input("Couch playable (y/n): ").lower() == 'y' else False
+    via = input("Via: ")
+    owned_on = input("Owned platforms (comma separated): ").split(',')
+
+    db.add_game(conn, title, year, linux, True, couch, 0, via, False, owned_on)
+
+    db.dump_csvs(conn, path)
+
 def handle_select(args):
     conn = sqlite3.connect(':memory:')
     conn.row_factory = sqlite3.Row
@@ -251,7 +270,8 @@ if __name__ == '__main__':
 
     # Parameters for adding games
     # Punting on this due to CSV backend
-    #add_parser = subparser.add_parser('add', help='Add a new game.')
+    add_parser = subparsers.add_parser('add', help='Add a new game.')
+    add_parser.set_defaults(func=handle_add)
 
     # Parameters for modifying games
     # Punting on this due to CSV backend
