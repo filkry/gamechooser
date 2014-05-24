@@ -207,7 +207,7 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         day, month, year = date.today().day, date.today().month, date.today().year
         # exclude games that have been delayed for another proposal
         query += ''' AND (next_valid_date IS NULL OR
-            next_valid_date <= "%i-%i-%i")''' % (year, month, day)
+            date(next_valid_date) <= date("%i-%i-%i"))''' % (year, month, day)
 
         # get active session game_ids
         active_ids = [row['game_id'] for row in show_sessions(conn)]
