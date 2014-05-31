@@ -28,7 +28,8 @@ def format_game(game_record, platforms, show_linux = False, show_couch = False,
     if show_play:
         sections.append('{play_more:>4}')
 
-    sections.append('{passes:>6}')
+    # Decided to hide passing information
+    #sections.append('{passes:>6}')
 
     if show_via:
         sections.append('{via:<20.20}')

@@ -271,8 +271,9 @@ def make_eternal(conn, game_id):
 
 def finish_session(conn, game_id, status):
     with conn:
-        conn.execute('UPDATE sessions SET outcome = ?, passed = 0 WHERE game_id == ? AND outcome == ""',
+        conn.execute('UPDATE sessions SET outcome = ? WHERE game_id == ? AND outcome == ""',
                 (status, game_id))
+        conn.execute('UPDATE game SET passes = 0 WHERE id == ?', (game_id,))
 
 def retire_game(conn, game_id):
     with conn:
