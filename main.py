@@ -152,6 +152,17 @@ def handle_select(args):
                         continue
                 new_passes = db.inc_pass(conn, game['id'])
 
+                # Delay next possible proposal according to passes
+                if passes == 1:
+                    db.set_next_valid_date(conn, game['id'],
+                        date.today() + datetime.timedelta(days = 7))
+                elif passes == 2:
+                    db.set_next_valid_date(conn, game['id'],
+                        date.today() + datetime.timedelta(days = 30))
+                else:
+                    db.set_next_valid_date(conn, game['id'],
+                        date.today() + datetime.timedelta(days = 90))
+
                 # If max passes, give option to make game eternal
                 if new_passes > args.max_passes:
                     eternal = input('You have passed on %s enough times that it will stop being suggested. You can avoid this by making this game "eternal". Y/N: ' % game['title'])
