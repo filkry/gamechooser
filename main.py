@@ -153,10 +153,10 @@ def handle_select(args):
                 new_passes = db.inc_pass(conn, game['id'])
 
                 # Delay next possible proposal according to passes
-                if passes == 1:
+                if new_passes == 1:
                     db.set_next_valid_date(conn, game['id'],
                         date.today() + datetime.timedelta(days = 7))
-                elif passes == 2:
+                elif new_passes == 2:
                     db.set_next_valid_date(conn, game['id'],
                         date.today() + datetime.timedelta(days = 30))
                 else:
