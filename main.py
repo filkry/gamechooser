@@ -252,7 +252,7 @@ def print_sessions(conn, session_records):
 
 
 def handle_sessions(args):
-    db.load_csvs(conn, path)
+    conn, path = instantiate_db(True)
 
     sessions = db.show_sessions(conn, active = not args.inactive,
             session_year = None if args.year == 0 else int(args.year),
@@ -261,7 +261,7 @@ def handle_sessions(args):
     print_sessions(conn, sessions)
 
 def handle_finish(conn):
-    db.load_csvs(conn, path)
+    conn, path = instantiate_db(True)
 
     sessions = db.show_sessions(conn, active = True)
     print_sessions(conn, sessions)
