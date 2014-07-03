@@ -52,12 +52,20 @@ def import_gdoc_sessions(conn, rows):
 
     print("Added %i games due to mismatched titles." % skipped)
 
+def search_score(candidate, title):
+    cl = candidate.lower()
+    tl = title.lower()
+    if cl in tl:
+        return 0
+    else:
+        return Levenshtein.distance(cl, tl)
+
+
 def search_game(conn, title):
     with conn:
         games = list(conn.execute('''SELECT id, title FROM game'''))
         
-        games = sorted(games,
-                key = lambda x: Levenshtein.distance(x[1].lower(), title.lower()))
+        games = sorted(games, key = lambda x: search_score(title, x[1]))
 
         return games
 

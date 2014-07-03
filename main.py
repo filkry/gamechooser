@@ -6,6 +6,18 @@ import os
 from datetime import date
 import datetime
 
+
+def instantiate_db(load_csvs = False):
+    conn = sqlite3.connect(':memory:')
+    conn.row_factory = sqlite3.Row
+    db.create_schema(conn)
+    path = os.path.expanduser(args.data)
+
+    if load_csvs:
+        db.load_csvs(conn, path)
+
+    return conn, path
+
 def dict_from_row(row):
     return dict(zip(row.keys(), row))
 
@@ -45,10 +57,7 @@ def format_game(game_record, platforms, show_linux = False, show_couch = False,
     return output
 
 def handle_import(args):
-    conn = sqlite3.connect(':memory:')
-    conn.row_factory = sqlite3.Row
-    db.create_schema(conn)
-    path = os.path.expanduser(args.data)
+    conn, path =  instantiate_db(False)
 
     # TODO: confirmation step? This wipes out existing data
     with open(args.file_name, 'r') as csvfile:
@@ -61,11 +70,7 @@ def handle_import(args):
     db.dump_csvs(conn, path)
 
 def handle_add(args):
-    conn = sqlite3.connect(':memory:')
-    conn.row_factory = sqlite3.Row
-    db.create_schema(conn)
-    path = os.path.expanduser(args.data)
-    db.load_csvs(conn, path)
+    conn, path =  instantiate_db(True)
 
     title = input("Game title: ")
     year = input("Release year: ")
@@ -80,11 +85,7 @@ def handle_add(args):
     db.dump_csvs(conn, path)
 
 def handle_starts(args):
-    conn = sqlite3.connect(':memory:')
-    conn.row_factory = sqlite3.Row
-    db.create_schema(conn)
-    path = os.path.expanduser(args.data)
-    db.load_csvs(conn, path)
+    conn, path =  instantiate_db(True)
 
     games = db.search_game(conn, args.title)[:5]
 
@@ -104,13 +105,20 @@ def handle_starts(args):
 
     db.dump_csvs(conn, path)
 
+def handle_search(args):
+    conn, path =  instantiate_db(True)
+
+    games = db.search_game(conn, args.title)[:5]
+
+    game_query = ''
+    for i, game in enumerate(games):
+        game_query += '%i) %s\n' % (i+1, games[i][1])
+
+    print(game_query)
+
 
 def handle_select(args):
-    conn = sqlite3.connect(':memory:')
-    conn.row_factory = sqlite3.Row
-    db.create_schema(conn)
-    path = os.path.expanduser(args.data)
-    db.load_csvs(conn, path)
+    conn, path =  instantiate_db(True)
 
     passed_ids = []
     while True:
@@ -203,10 +211,6 @@ def print_sessions(conn, session_records):
 
 
 def handle_sessions(args):
-    conn = sqlite3.connect(':memory:')
-    conn.row_factory = sqlite3.Row
-    db.create_schema(conn)
-    path = os.path.expanduser(args.data)
     db.load_csvs(conn, path)
 
     sessions = db.show_sessions(conn, active = not args.inactive,
@@ -216,10 +220,6 @@ def handle_sessions(args):
     print_sessions(conn, sessions)
 
 def handle_finish(conn):
-    conn = sqlite3.connect(':memory:')
-    conn.row_factory = sqlite3.Row
-    db.create_schema(conn)
-    path = os.path.expanduser(args.data)
     db.load_csvs(conn, path)
 
     sessions = db.show_sessions(conn, active = True)
@@ -289,6 +289,11 @@ if __name__ == '__main__':
     starts_parser = subparsers.add_parser('start', help='Start a session.')
     starts_parser.add_argument('title', help='Title of game to start a session for.')
     starts_parser.set_defaults(func=handle_starts)
+
+    # Parameters for searching for games
+    search_parser = subparsers.add_parser('search', help='Search for a game.')
+    search_parser .add_argument('title', help='Title of game to search for.')
+    search_parser .set_defaults(func=handle_search)
 
     # Parameters for selecting a game to play
     select_parser = subparsers.add_parser('select', help='Select a random game to play.')
