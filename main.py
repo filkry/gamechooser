@@ -21,12 +21,35 @@ def instantiate_db(load_csvs = False):
 def dict_from_row(row):
     return dict(zip(row.keys(), row))
 
+def format_games(conn, game_records, header = True, nums = True,
+        show_linux = False, show_couch = False, show_play = False,
+        show_via = True, show_platforms = True, show_year = False):
+
+    output = []
+
+    fmt = lambda g, ps: format_game(g, ps, show_linux = show_linux,
+            show_couch = show_couch, show_play = show_play,
+            show_via = show_via, show_platforms = show_platforms,
+            show_year = show_year)
+
+    if header:
+        title = fmt({'title': 'title', 'release_year': 'year', 'linux': 'linux', 'couch': 'couch',
+            'play_more': 'more', 'passes': 'passes', 'via': 'via'}, ['storefronts'])
+        output.append('\033[1m' + '   ' + title + '\033[0m')
+
+    for i, game in enumerate(game_records):
+        platforms = db.storefronts(conn, game['id'])
+        output.append('{0:<3.3}'.format(str(i+1)) + fmt(game, platforms))
+
+    return '\n'.join(output)
+
+
 def format_game(game_record, platforms, show_linux = False, show_couch = False,
         show_play = False, show_via = True, show_platforms = True,
         show_year = False):
     sections = ['{title:<40.40}']
 
-    game_dict = dict_from_row(game_record)
+    game_dict = game_record if game_record['title'] == 'title' else dict_from_row(game_record) 
 
     if show_year:
         sections.append('{release_year:>4}')
@@ -89,16 +112,15 @@ def handle_starts(args):
 
     games = db.search_game(conn, args.title)[:5]
 
-    game_query = 'Which game?\n'
-    for i, game in enumerate(games):
-        game_query += '%i) %s\n' % (i+1, games[i][1])
-    game_query += 'q) abort\nInput response: '
+    print('Which game?')
+    print(format_games(conn, games, header = True))
 
-    which_game = input(game_query)
+    which_game = input('Input number, or q to abort: ')
     if which_game.lower() == 'q':
         return
 
-    gid, title = games[int(which_game) - 1]
+    gid, title = (games[int(which_game) - 1]['id'],
+                  games[int(which_game) - 1]['title'])
     db.create_session(conn, gid)
 
     print('Created session for %s' % (title))
@@ -110,12 +132,9 @@ def handle_search(args):
 
     games = db.search_game(conn, args.title)[:5]
 
-    game_query = ''
-    for i, game in enumerate(games):
-        game_query += '%i) %s\n' % (i+1, games[i][1])
-
-    print(game_query)
-
+    print(format_games(conn, games, header = True, nums = True,
+        show_linux = True, show_couch = True, 
+        show_via = True, show_platforms = True, show_year = True))
 
 def handle_select(args):
     conn, path =  instantiate_db(True)
@@ -294,6 +313,11 @@ if __name__ == '__main__':
     search_parser = subparsers.add_parser('search', help='Search for a game.')
     search_parser .add_argument('title', help='Title of game to search for.')
     search_parser .set_defaults(func=handle_search)
+
+    # Parameters for adding ownership of a game
+    #own_parser = subparsers.add_parser('search', help='Search for a game.')
+    #own_parser .add_argument('title', help='Title of game to search for.')
+    #own_parser .set_defaults(func=handle_search)
 
     # Parameters for selecting a game to play
     select_parser = subparsers.add_parser('select', help='Select a random game to play.')

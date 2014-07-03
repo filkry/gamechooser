@@ -63,7 +63,7 @@ def search_score(candidate, title):
 
 def search_game(conn, title):
     with conn:
-        games = list(conn.execute('''SELECT id, title FROM game'''))
+        games = list(conn.execute('''SELECT * FROM game'''))
         
         games = sorted(games, key = lambda x: search_score(title, x[1]))
 
