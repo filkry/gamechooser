@@ -176,7 +176,7 @@ def storefronts(conn, gid):
 
 def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         play_more = True, couch = None, max_passes = 2, owned=True,
-        exclude_ids = []):
+        exclude_ids = [], storefront = None):
     with conn:
         # Construct query
         conditions = []
@@ -201,18 +201,18 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         elif couch == False:
             conditions.append('couch == 0')
 
+        if owned:
+            conditions.append('storefront NOT NULL')
+
+        if storefront is not None:
+            conditions.append('storefront == "%s"' % storefront)
+
         conditions.append('passes <= ' + str(max_passes))
 
-        if owned:
-            select = '''SELECT id, title, release_year,
-                linux, play_more, couch, passes, via, eternal,
-                next_valid_date
-                FROM own JOIN game ON own.game_id=game.id'''
-        else:
-            select = '''SELECT id, title, release_year,
-                linux, play_more, couch, passes, via, eternal,
-                next_valid_date
-                FROM game'''
+        select = '''SELECT id, title, release_year,
+            linux, play_more, couch, passes, via, eternal,
+            next_valid_date
+            FROM own JOIN game ON own.game_id=game.id'''
 
         query = select + ' WHERE ' + ' AND '.join(conditions) 
 

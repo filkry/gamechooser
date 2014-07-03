@@ -166,7 +166,7 @@ def handle_select(args):
         games = db.select_random_games(conn, n = args.n, before_this_year = True if args.old else None,
                 linux = True if args.linux else None, couch = True if args.couch else None,
                 owned = False if args.buy else True, max_passes = args.max_passes,
-                exclude_ids = passed_ids)
+                exclude_ids = passed_ids, storefront = args.storefront)
 
         title = format_game({'title': 'title', 'release_year': 'year', 'linux': 'linux',
             'couch': 'couch', 'play_more': 'more', 'passes': 'passes', 'via': 'via'}, ['storefronts'])
@@ -351,6 +351,8 @@ if __name__ == '__main__':
             action='store_true')
     select_parser.add_argument('-b', '--buy', help='Include games that are not owned.',
             action='store_true')
+    select_parser.add_argument('-sf', '--storefront', help='Only include games on specified storefront.',
+            action='store', default=None)
     select_parser.add_argument('-n', help='Number of games to select.',
             action='store', default='1')
     select_parser.add_argument('-m', '--max_passes',
