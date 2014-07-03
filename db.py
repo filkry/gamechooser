@@ -69,6 +69,10 @@ def search_game(conn, title):
 
         return games
 
+def add_ownership(conn, game_id, storefront):
+    conn.execute('''insert into own(game_id, storefront) values(?, ?)''',
+            (game_id, storefront))
+
 def add_game(conn, title, release_year, linux, play_more, couch, passes, via, eternal, storefronts):
     c = conn.cursor()
 

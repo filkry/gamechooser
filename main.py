@@ -93,7 +93,7 @@ def handle_import(args):
     db.dump_csvs(conn, path)
 
 def handle_add(args):
-    conn, path =  instantiate_db(True)
+    conn, path = instantiate_db(True)
 
     title = input("Game title: ")
     year = input("Release year: ")
@@ -108,7 +108,7 @@ def handle_add(args):
     db.dump_csvs(conn, path)
 
 def handle_starts(args):
-    conn, path =  instantiate_db(True)
+    conn, path = instantiate_db(True)
 
     games = db.search_game(conn, args.title)[:5]
 
@@ -127,8 +127,30 @@ def handle_starts(args):
 
     db.dump_csvs(conn, path)
 
+def handle_own(args):
+    conn, path = instantiate_db(True)
+
+    games = db.search_game(conn, args.title)[:5]
+
+    print('Which game now owned?')
+    print(format_games(conn, games, header = True))
+
+    which_game = input('Input number, or q to abort: ')
+    if which_game.lower() == 'q':
+        return
+
+    gid, title = (games[int(which_game) - 1]['id'],
+                  games[int(which_game) - 1]['title'])
+
+    plat = input('Name of platformed purchased on: ')
+    db.add_ownership(conn, gid, plat)
+
+    print('Added %s platform for %s' % (plat, title))
+
+    db.dump_csvs(conn, path)
+
 def handle_search(args):
-    conn, path =  instantiate_db(True)
+    conn, path = instantiate_db(True)
 
     games = db.search_game(conn, args.title)[:5]
 
@@ -137,7 +159,7 @@ def handle_search(args):
         show_via = True, show_platforms = True, show_year = True))
 
 def handle_select(args):
-    conn, path =  instantiate_db(True)
+    conn, path = instantiate_db(True)
 
     passed_ids = []
     while True:
@@ -315,9 +337,9 @@ if __name__ == '__main__':
     search_parser .set_defaults(func=handle_search)
 
     # Parameters for adding ownership of a game
-    #own_parser = subparsers.add_parser('search', help='Search for a game.')
-    #own_parser .add_argument('title', help='Title of game to search for.')
-    #own_parser .set_defaults(func=handle_search)
+    own_parser = subparsers.add_parser('own', help='Add ownership record for a game.')
+    own_parser .add_argument('title', help='Title of game now owned.')
+    own_parser .set_defaults(func=handle_own)
 
     # Parameters for selecting a game to play
     select_parser = subparsers.add_parser('select', help='Select a random game to play.')
