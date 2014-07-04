@@ -282,8 +282,9 @@ def handle_finish(conn):
     more = input('''How long until %s should be suggested again?
 1) any time
 2) one month
-3) one year
-4) done forever
+3) three months
+4) one year
+5) done forever
 q) abort
 Input response: ''' % finish_session['title'])
     if more == 'q' or more == 'Q':
@@ -294,8 +295,11 @@ Input response: ''' % finish_session['title'])
             date.today() + datetime.timedelta(days = 31))
     elif int(more) == 3:
         db.set_next_valid_date(conn, finish_session['game_id'],
-            date.today() + datetime.timedelta(days = 365))
+            date.today() + datetime.timedelta(days = 92))
     elif int(more) == 4:
+        db.set_next_valid_date(conn, finish_session['game_id'],
+            date.today() + datetime.timedelta(days = 365))
+    elif int(more) == 5:
         db.retire_game(conn, finish_session['game_id'])
 
     db.finish_session(conn, finish_session['game_id'], status)
