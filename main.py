@@ -52,12 +52,18 @@ def format_game(game_record, platforms, show_linux = False, show_couch = False,
     game_dict = game_record if game_record['title'] == 'title' else dict_from_row(game_record) 
 
     if show_year:
+        if game_dict['release_year'] is None:
+            game_dict['release_year'] = '?'
         sections.append('{release_year:>4}')
 
     if show_linux:
+        if game_dict['linux'] is None:
+            game_dict['linux'] = '?'
         sections.append('{linux:>5}')
 
     if show_couch:
+        if game_dict['couch'] is None:
+            game_dict['couch'] = '?'
         sections.append('{couch:>5}')
 
     if show_play:
