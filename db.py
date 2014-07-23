@@ -212,7 +212,7 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         select = '''SELECT id, title, release_year,
             linux, play_more, couch, passes, via, eternal,
             next_valid_date
-            FROM own JOIN game ON own.game_id=game.id'''
+            FROM game LEFT OUTER JOIN own ON own.game_id=game.id'''
 
         query = select + ' WHERE ' + ' AND '.join(conditions) 
 
