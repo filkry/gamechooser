@@ -118,7 +118,7 @@ def handle_select(args):
 
         annotate_platforms(conn, games)
         print(rp.format_records(games,
-            ['title', 'linux', 'couch', 'platforms'],
+            ['title', 'linux', 'couch', 'platforms', 'via'],
             header = True, nums = True))
 
         # If we're just displaying a selection, finish here
@@ -183,6 +183,8 @@ def handle_sessions(args):
             status = 'stuck' if args.stuck else None)
 
     columns = ['title', 'started']
+    if(args.column):
+        columns.extend(args.column)
     print(rp.format_records(session_records, columns,
         header=True,nums=True))
 
