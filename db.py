@@ -21,6 +21,11 @@ def create_schema(conn):
             outcome text,
             foreign key (game_id) references game(id))''')
 
+def dict_from_row(row):
+    return dict(zip(row.keys(), row))
+
+def dicts_from_rows(rows):
+    return list(map(dict_from_row, rows))
 
 def import_gdoc_sessions(conn, rows):
     with conn:
@@ -67,7 +72,7 @@ def search_game(conn, title):
         
         games = sorted(games, key = lambda x: search_score(title, x[1]))
 
-        return games
+        return dicts_from_rows(games)
 
 def add_ownership(conn, game_id, storefront):
     conn.execute('''insert into own(game_id, storefront) values(?, ?)''',
@@ -232,7 +237,7 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
             query += ' AND id NOT IN (' + ','.join([str(i) for i in exclude_ids + active_ids]) + ')'
 
         query += ' ORDER BY RANDOM() LIMIT ' + str(n)
-        return list(conn.execute(query))
+        return dicts_from_rows(conn.execute(query))
 
 def show_sessions(conn, active = True, status = None,
         session_year = date.today().year):
@@ -254,7 +259,7 @@ def show_sessions(conn, active = True, status = None,
             sessions AS s JOIN game AS g ON s.game_id=g.id WHERE ''' + ' AND '.join(conditions)
         query += ' ORDER BY started'
 
-        return list(conn.execute(query))
+        return dicts_from_rows(conn.execute(query))
 
 def create_session(conn, game_id):
     with conn:
@@ -273,8 +278,6 @@ def set_next_valid_date(conn, game_id, next_valid_date):
     c = conn.cursor()
     c.execute('UPDATE game SET next_valid_date = ? WHERE id == ?',
             (next_valid_date, game_id))
-
-    print(c.rowcount)
     conn.commit()
 
 def make_eternal(conn, game_id):

@@ -5,7 +5,7 @@ import db
 import os
 from datetime import date
 import datetime
-
+import record_print as rp
 
 def instantiate_db(load_csvs = False):
     conn = sqlite3.connect(':memory:')
@@ -18,72 +18,10 @@ def instantiate_db(load_csvs = False):
 
     return conn, path
 
-def dict_from_row(row):
-    return dict(zip(row.keys(), row))
-
-def format_games(conn, game_records, header = True, nums = True,
-        show_linux = False, show_couch = False, show_play = False,
-        show_via = True, show_platforms = True, show_year = False):
-
-    output = []
-
-    fmt = lambda g, ps: format_game(g, ps, show_linux = show_linux,
-            show_couch = show_couch, show_play = show_play,
-            show_via = show_via, show_platforms = show_platforms,
-            show_year = show_year)
-
-    if header:
-        title = fmt({'title': 'title', 'release_year': 'year', 'linux': 'linux', 'couch': 'couch',
-            'play_more': 'more', 'passes': 'passes', 'via': 'via'}, ['storefronts'])
-        output.append('\033[1m' + '   ' + title + '\033[0m')
-
-    for i, game in enumerate(game_records):
-        platforms = db.storefronts(conn, game['id'])
-        output.append('{0:<3.3}'.format(str(i+1)) + fmt(game, platforms))
-
-    return '\n'.join(output)
-
-
-def format_game(game_record, platforms, show_linux = False, show_couch = False,
-        show_play = False, show_via = True, show_platforms = True,
-        show_year = False):
-    sections = ['{title:<40.40}']
-
-    game_dict = game_record if game_record['title'] == 'title' else dict_from_row(game_record) 
-
-    if show_year:
-        if game_dict['release_year'] is None:
-            game_dict['release_year'] = '?'
-        sections.append('{release_year:>4}')
-
-    if show_linux:
-        if game_dict['linux'] is None:
-            game_dict['linux'] = '?'
-        sections.append('{linux:>5}')
-
-    if show_couch:
-        if game_dict['couch'] is None:
-            game_dict['couch'] = '?'
-        sections.append('{couch:>5}')
-
-    if show_play:
-        sections.append('{play_more:>4}')
-
-    # Decided to hide passing information
-    #sections.append('{passes:>6}')
-
-    if show_via:
-        sections.append('{via:<20.20}')
-        if game_dict['via'] is None:
-            game_dict['via'] = ''
-
-    format_str = ' '.join(sections)
-    output = format_str.format(**game_dict)
-
-    if show_platforms:
-        output += "  {0:<20.20}".format(', '.join(platforms))
-
-    return output
+def annotate_platforms(conn, game_records):
+    for gr in game_records:
+        platforms = db.storefronts(conn, gr['id'])
+        gr['platforms'] = ', '.join(platforms)
 
 def handle_import(args):
     conn, path =  instantiate_db(False)
@@ -119,7 +57,9 @@ def handle_starts(args):
     games = db.search_game(conn, args.title)[:5]
 
     print('Which game?')
-    print(format_games(conn, games, header = True))
+    print(rp.format_records(games,
+        ['title'],
+        header = True, nums = True))
 
     which_game = input('Input number, or q to abort: ')
     if which_game.lower() == 'q':
@@ -139,7 +79,9 @@ def handle_own(args):
     games = db.search_game(conn, args.title)[:5]
 
     print('Which game now owned?')
-    print(format_games(conn, games, header = True))
+    print(rp.format_records(games,
+        ['title'],
+        nums = True,header = True))
 
     which_game = input('Input number, or q to abort: ')
     if which_game.lower() == 'q':
@@ -159,10 +101,10 @@ def handle_search(args):
     conn, path = instantiate_db(True)
 
     games = db.search_game(conn, args.title)[:5]
-
-    print(format_games(conn, games, header = True, nums = True,
-        show_linux = True, show_couch = True, 
-        show_via = True, show_platforms = True, show_year = True))
+    annotate_platforms(conn, games)
+    columns = ['title', 'via', 'platforms', 'release_year']
+    
+    print(rp.format_records(games, columns, header=True))
 
 def handle_select(args):
     conn, path = instantiate_db(True)
@@ -174,13 +116,10 @@ def handle_select(args):
                 owned = False if args.buy else True, max_passes = args.max_passes,
                 exclude_ids = passed_ids, storefront = args.storefront)
 
-        title = format_game({'title': 'title', 'release_year': 'year', 'linux': 'linux',
-            'couch': 'couch', 'play_more': 'more', 'passes': 'passes', 'via': 'via'}, ['storefronts'])
-        print('\033[1m' + '   ' + title + '\033[0m')
-
-        for i, game in enumerate(games):
-            platforms = db.storefronts(conn, game['id'])
-            print('{0:<3.3}'.format(str(i+1)) + format_game(game, platforms))
+        annotate_platforms(conn, games)
+        print(rp.format_records(games,
+            ['title', 'linux', 'couch', 'platforms'],
+            header = True, nums = True))
 
         # If we're just displaying a selection, finish here
         if not args.pick:
@@ -236,41 +175,24 @@ def handle_select(args):
     # So scared of commitment
     db.dump_csvs(conn, path)
 
-def format_session(session_record, show_started= True, show_outcome = True):
-    sections = ['{title:<40.40}']
-
-    if show_started:
-        sections.append('{started:>10.10}')
-
-    if show_outcome:
-        sections.append('{outcome:>10.10}')
-
-    output = '  '.join(sections).format(**session_record)
-
-    return output
-
-def print_sessions(conn, session_records):
-    title = format_session({'title': 'title', 'started': 'started', 'outcome': 'outcome'})
-    print('\033[1m' + '   ' + title + '\033[0m')
-
-    for i, s in enumerate(session_records):
-        print('{0:<3.3}'.format(str(i+1)) + format_session(s))
-
-
 def handle_sessions(args):
     conn, path = instantiate_db(True)
 
-    sessions = db.show_sessions(conn, active = not args.inactive,
+    session_records = db.show_sessions(conn, active = not args.inactive,
             session_year = None if args.year == 0 else int(args.year),
             status = 'stuck' if args.stuck else None)
 
-    print_sessions(conn, sessions)
+    columns = ['title', 'started']
+    print(rp.format_records(session_records, columns,
+        header=True,nums=True))
 
 def handle_finish(conn):
     conn, path = instantiate_db(True)
 
     sessions = db.show_sessions(conn, active = True)
-    print_sessions(conn, sessions)
+    print(rp.format_records(sessions,
+        ['title', 'started'],
+        header=True,nums=True))
 
     finish = input('Input a session to finish, or Q to abort: ')
     if finish == 'q' or finish == 'Q':
@@ -329,6 +251,9 @@ if __name__ == '__main__':
     sessions_parser.add_argument('-s', '--stuck',
             help='Show only sessions which "stuck" (made an impression).',
             action='store_true')
+    sessions_parser.add_argument('-c', '--column',
+            help='Print a column in addition to the defaults.',
+            action='append')
         
     sessions_parser.set_defaults(func=handle_sessions)
 
