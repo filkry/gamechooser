@@ -1,3 +1,5 @@
+import math
+
 column_aliases = {
     'release_year': 'year',
     'platforms': 'owned',
@@ -37,14 +39,14 @@ def prepend_num(string, num_digits, num = None):
     if num is None:
         line.append(' ' * (num_digits + 1))
     else:
-        tmp = '{0:<%i.%i}' % (num_digits+1, num_digits+1)
+        tmp = '{0:<%i.%i}' % (num_digits+2, num_digits+2)
         line.append(tmp.format(str(num)))
     line.append(string)
     return ''.join(line)
 
 def format_records(records, columns, header=False, nums=False):
     output = []
-    num_digits = int(len(records) / 10) + 1
+    num_digits = int(math.log10(len(records)))+1
 
     if header:
         col_record = {c: alias_replace(c) for c in columns}
