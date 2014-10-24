@@ -37,7 +37,7 @@ def format_record(record, columns):
 def prepend_num(string, num_digits, num = None):
     line = [] 
     if num is None:
-        line.append(' ' * (num_digits + 1))
+        line.append(' ' * (num_digits + 2))
     else:
         tmp = '{0:<%i.%i}' % (num_digits+2, num_digits+2)
         line.append(tmp.format(str(num)))
