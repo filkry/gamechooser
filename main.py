@@ -151,7 +151,15 @@ def handle_select(args):
             for game in games:
                 # Don't propose game again
                 passed_ids.append(game['id'])
-        
+
+                # If eternal still undecided or passes is 0 (i.e. game was reset after
+                # single session), give option to make eternal
+                if game['eternal'] is None or game['passes'] == 0:
+                    eternal = input('Should this game never stop being proposed? Y/N: ')
+                    if eternal == 'Y' or eternal == 'y':
+                        db.make_eternal(conn, game['id'])
+
+
                 # If the game is not out yet, don't increment
                 if game['release_year'] != None and game['release_year'] != '' and int(game['release_year']) == date.today().year:
                     freebie = input('%s was released this year. Has it been released? Y/N: ' % game['title'])
@@ -169,13 +177,7 @@ def handle_select(args):
                 else:
                     db.set_next_valid_date(conn, game['id'],
                         date.today() + datetime.timedelta(days = 90))
-
-                # If max passes, give option to make game eternal
-                if new_passes > args.max_passes:
-                    eternal = input('You have passed on %s enough times that it will stop being suggested. You can avoid this by making this game "eternal". Y/N: ' % game['title'])
-                    if eternal == 'Y' or eternal == 'y':
-                        db.make_eternal(conn, game['id'])
-
+                
         else:
             # Create an active session
             game = games[selection - 1]
