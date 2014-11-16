@@ -106,6 +106,19 @@ def handle_search(args):
     
     print(rp.format_records(games, columns, header=True))
 
+def handle_gamestats(args):
+    conn, path = instantiate_db(True)
+
+    all_games = db.select_random_games(conn, n=0, owned=False)
+    n_all_games = len(all_games)
+    owned_games = db.select_random_games(conn, n=0, owned=True)
+    n_owned_games = len(owned_games)
+
+    print('Total # games: ', str(n_all_games))
+    print('# owned games: ', str(n_owned_games))
+    print('# unowned games: ', str(n_all_games - n_owned_games))
+
+
 def handle_select(args):
     conn, path = instantiate_db(True)
 
@@ -310,6 +323,10 @@ if __name__ == '__main__':
     # Punting on this due to CSV backend
     add_parser = subparsers.add_parser('add', help='Add a new game.')
     add_parser.set_defaults(func=handle_add)
+
+    # Parameters for printing game stats
+    gamestats_parser = subparsers.add_parser('gamestats', help='Print stats on game in collection.')
+    gamestats_parser.set_defaults(func=handle_gamestats)
 
     # Parameters for modifying games
     # Punting on this due to CSV backend

@@ -236,7 +236,11 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         if len(exclude_ids + active_ids) > 0:
             query += ' AND id NOT IN (' + ','.join([str(i) for i in exclude_ids + active_ids]) + ')'
 
-        query += ' ORDER BY RANDOM() LIMIT ' + str(n)
+        query += ' ORDER BY RANDOM()'
+
+        if n != 0:
+            query += ' LIMIT ' + str(n)
+
         return dicts_from_rows(conn.execute(query))
 
 def show_sessions(conn, active = True, status = None,
