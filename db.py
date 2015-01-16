@@ -257,11 +257,13 @@ def show_sessions(conn, active = True, status = None,
             conditions.append('outcome == "' + status + '"')
 
         if session_year is not None:
-            conditions.append('started BETWEEN "%i-01-01" AND "%i-12-31"' % (session_year, session_year))
+            conditions.append('((started BETWEEN "%i-01-01" AND "%i-12-31") OR outcome is null OR outcome == "")' % (session_year, session_year))
 
         query = '''SELECT * FROM 
             sessions AS s JOIN game AS g ON s.game_id=g.id WHERE ''' + ' AND '.join(conditions)
         query += ' ORDER BY started'
+
+        print(query)
 
         return dicts_from_rows(conn.execute(query))
 
