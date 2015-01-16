@@ -263,8 +263,6 @@ def show_sessions(conn, active = True, status = None,
             sessions AS s JOIN game AS g ON s.game_id=g.id WHERE ''' + ' AND '.join(conditions)
         query += ' ORDER BY started'
 
-        print(query)
-
         return dicts_from_rows(conn.execute(query))
 
 def create_session(conn, game_id):
