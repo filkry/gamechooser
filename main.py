@@ -47,7 +47,7 @@ def handle_add(args):
     via = input("Via: ")
     owned_on = input("Owned platforms (comma separated): ").split(',')
 
-    db.add_game(conn, title, year, linux, True, couch, 0, via, False, owned_on)
+    db.add_game(conn, title, year, linux, True, couch, 0, via, None, owned_on)
 
     db.dump_csvs(conn, path)
 
