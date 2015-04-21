@@ -154,7 +154,7 @@ def handle_select(args):
 
                 # If eternal still undecided or passes is 0 (i.e. game was reset after
                 # single session), give option to make eternal
-                if game['eternal'] is None or game['passes'] == 0:
+                if game['eternal'] is None:
                     eternal = input('Should this game never stop being proposed? Y/N: ')
                     if eternal == 'Y' or eternal == 'y':
                         db.make_eternal(conn, game['id'])
