@@ -284,9 +284,9 @@ def set_next_valid_date(conn, game_id, next_valid_date):
             (next_valid_date, game_id))
     conn.commit()
 
-def make_eternal(conn, game_id):
+def set_eternal(conn, game_id, val):
     with conn:
-        conn.execute('UPDATE game SET eternal = 1 WHERE id == ?', (game_id,))
+        conn.execute('UPDATE game SET eternal = ? WHERE id == ?', (val, game_id,))
 
 def finish_session(conn, game_id, status):
     with conn:

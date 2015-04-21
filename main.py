@@ -155,9 +155,11 @@ def handle_select(args):
                 # If eternal still undecided 
                 # give option to make eternal
                 if game['eternal'] is None:
-                    eternal = input('Should this game never stop being proposed? Y/N: ')
+                    eternal = input('Should this game never stop being proposed? Y/N/P[ass]: ')
                     if eternal == 'Y' or eternal == 'y':
-                        db.make_eternal(conn, game['id'])
+                        db.set_eternal(conn, game['id'], 1)
+                    elif eternal  == 'N' or eternal == 'n':
+                        db.set_eternal(conn, game['id'], 0)
 
 
                 # If the game is not out yet, don't increment
