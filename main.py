@@ -152,8 +152,8 @@ def handle_select(args):
                 # Don't propose game again
                 passed_ids.append(game['id'])
 
-                # If eternal still undecided or passes is 0 (i.e. game was reset after
-                # single session), give option to make eternal
+                # If eternal still undecided 
+                # give option to make eternal
                 if game['eternal'] is None:
                     eternal = input('Should this game never stop being proposed? Y/N: ')
                     if eternal == 'Y' or eternal == 'y':
