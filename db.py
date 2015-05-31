@@ -1,8 +1,12 @@
-import sqlite3
-import datetime
-import csv
-import Levenshtein
+import sqlite3, sys, datetime, csv
 from datetime import date
+
+use_levenshtein = False
+try:
+    import Levenshtein
+    use_levenshtein = True
+except:
+    pass
 
 def create_schema(conn):
     with conn:
@@ -62,8 +66,10 @@ def search_score(candidate, title):
     tl = title.lower()
     if cl in tl:
         return 0
-    else:
+    elif use_levenshtein:
         return Levenshtein.distance(cl, tl)
+    else:
+        return sys.maxsize
 
 
 def search_game(conn, title):
@@ -119,7 +125,7 @@ def import_gdoc_games(conn, rows):
 def dump_csvs(conn, fn_prefix):
     with conn:
         with open("%s_game.csv" % fn_prefix, 'w') as game:
-            writer = csv.writer(game)
+            writer = csv.writer(game, lineterminator='\n')
             writer.writerow(['id', 'title', 'release_year', 'linux',
                 'play_more', 'couch', 'passes', 'via',
                 'eternal', 'next_valid_date'])
@@ -130,13 +136,13 @@ def dump_csvs(conn, fn_prefix):
                         row['next_valid_date']])
 
         with open("%s_own.csv" % fn_prefix, 'w') as own:
-            writer = csv.writer(own)
+            writer = csv.writer(own, lineterminator='\n')
             writer.writerow(['game_id', 'storefront'])
             for row in conn.execute('SELECT * FROM own'):
                 writer.writerow([row['game_id'], row['storefront']])
 
         with open("%s_session.csv" % fn_prefix, 'w') as session:
-            writer = csv.writer(session)
+            writer = csv.writer(session, lineterminator='\n')
             writer.writerow(['game_id', 'started', 'outcome'])
             for row in conn.execute('SELECT * FROM sessions'):
                 writer.writerow([row['game_id'], row['started'], row['outcome']])

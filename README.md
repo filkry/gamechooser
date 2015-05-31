@@ -19,3 +19,8 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -d DATA, --data DATA  location for storing data files
+
+Before using, you must create a config file ~/.gamechooser with the following contents:
+
+    [main]
+    data_directory = <where to read/store gamechooser database>

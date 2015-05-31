@@ -1,17 +1,16 @@
-import argparse
-import csv
-import sqlite3
-import db
-import os
+import argparse, csv, sqlite3, db, os, sys
 from datetime import date
 import datetime
 import record_print as rp
+import configparser as cp
+
+data_directory = None
 
 def instantiate_db(load_csvs = False):
     conn = sqlite3.connect(':memory:')
     conn.row_factory = sqlite3.Row
     db.create_schema(conn)
-    path = os.path.expanduser(args.data)
+    path = os.path.expanduser(data_directory)
 
     if load_csvs:
         db.load_csvs(conn, path)
@@ -255,9 +254,19 @@ Input response: ''' % finish_session['title'])
 
     
 if __name__ == '__main__':
+    configpath = os.path.expanduser("~/.gamechooser")
+    if not os.path.exists(configpath):
+        print("Please create config file ~/.gamechooser to specify where your game database will be stored.")
+        sys.exit(1)
+
+    config = cp.RawConfigParser()
+    config.read(configpath)
+    data_directory = config.get("main", "data_directory")
+
+    if data_directory is None:
+        print("Please ensure 'data_directory' is specified in the 'main' section of your config file before running this software.")
+
     arg_parser = argparse.ArgumentParser(description="Manage a library of video games.")
-    arg_parser.add_argument('-d', '--data', help='location for storing data files',
-            action='store', default='/Volumes/Files/spideroak_sync/gamechooser/')
     subparsers = arg_parser.add_subparsers()
 
     # Parameteres for listing sessions
