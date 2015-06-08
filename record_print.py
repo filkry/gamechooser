@@ -27,11 +27,13 @@ def format_record(record, columns):
 
     for c in columns:
         if c in column_format:
-            sections.append('{%s:%s}' % (c, column_format[c]))
+            sections.append('{%s!s:%s}' % (c, column_format[c]))
         else:
-            sections.append('{%s}' % (c,))
+            sections.append('{%s!s}' % (c,))
 
-    output = '  '.join(sections).format(**record)
+    format_str = '  '.join(sections)
+
+    output = format_str.format(**record)
     return output
 
 def prepend_num(string, num_digits, num = None):
