@@ -102,6 +102,11 @@ def handle_search(args):
     games = db.search_game(conn, args.title)[:5]
     annotate_platforms(conn, games)
     columns = ['title', 'via', 'platforms', 'release_year']
+
+    if args.passes:
+        columns.append('passes')
+    if args.eternal:
+        columns.append('eternal')
     
     print(rp.format_records(games, columns, header=True))
 
@@ -123,9 +128,15 @@ def handle_select(args):
 
     passed_ids = []
     while True:
+        owned = True
+        if args.buy:
+            owned = None
+        if args.buy_only:
+            owned = False
+
         games = db.select_random_games(conn, n = args.n, before_this_year = True if args.old else None,
                 linux = True if args.linux else None, couch = True if args.couch else None,
-                owned = False if args.buy else True, max_passes = args.max_passes,
+                owned = owned, max_passes = args.max_passes,
                 exclude_ids = passed_ids, storefront = args.storefront)
 
         annotate_platforms(conn, games)
@@ -296,8 +307,12 @@ if __name__ == '__main__':
 
     # Parameters for searching for games
     search_parser = subparsers.add_parser('search', help='Search for a game.')
-    search_parser .add_argument('title', help='Title of game to search for.')
-    search_parser .set_defaults(func=handle_search)
+    search_parser.add_argument('title', help='Title of game to search for.')
+    search_parser.add_argument('-p', '--passes', help='Show number of passes.',
+            action='store_true')
+    search_parser.add_argument('-e', '--eternal', help='Show whether eternal.',
+            action='store_true')
+    search_parser.set_defaults(func=handle_search)
 
     # Parameters for adding ownership of a game
     own_parser = subparsers.add_parser('own', help='Add ownership record for a game.')
@@ -313,6 +328,8 @@ if __name__ == '__main__':
     select_parser.add_argument('-o', '--old', help='Only select games from before this year.',
             action='store_true')
     select_parser.add_argument('-b', '--buy', help='Include games that are not owned.',
+            action='store_true')
+    select_parser.add_argument('-bb', '--buy_only', help='Onlye include games that are not owned.',
             action='store_true')
     select_parser.add_argument('-sf', '--storefront', help='Only include games on specified storefront.',
             action='store', default=None)

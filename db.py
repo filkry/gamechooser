@@ -196,6 +196,8 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
             conditions.append('release_year < ' + str(date.today().year))
         elif before_this_year is False:
             conditions.append('release_year == ' + str(date.today().year))
+        else:
+            conditions.append('release_year <= ' + str(date.today().year))
 
         if linux == True:
             conditions.append('linux == 1')
@@ -212,8 +214,10 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         elif couch == False:
             conditions.append('couch == 0')
 
-        if owned:
+        if owned == True:
             conditions.append('storefront NOT NULL')
+        elif owned == False:
+            conditions.append('storefront IS NULL')
 
         if storefront is not None:
             conditions.append('storefront == "%s"' % storefront)

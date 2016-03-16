@@ -20,6 +20,8 @@ column_format = {
     'platforms': '<20.20',
     'started': '>10.10',
     'outcome': '>10.10',
+    'passes': '<6',
+    'eternal': '<7',
 }
 
 def format_record(record, columns):
