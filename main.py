@@ -110,17 +110,39 @@ def handle_search(args):
     
     print(rp.format_records(games, columns, header=True))
 
+def handle_reset(args):
+    conn, path = instantiate_db(True)
+
+    games = db.search_game(conn, args.title)[:5]
+
+    print('Which game to reset?')
+    print(rp.format_records(games,
+        ['title'],
+        nums = True,header = True))
+
+    which_game = input('Input number, or q to abort: ')
+    if which_game.lower() == 'q':
+        return
+
+    gid, title = (games[int(which_game) - 1]['id'],
+                  games[int(which_game) - 1]['title'])
+
+    db.reset_selectability(conn, gid);
+    print('Reset selectability for %s' % (title))
+
+    db.dump_csvs(conn, path)
+
 def handle_gamestats(args):
     conn, path = instantiate_db(True)
 
-    all_games = db.select_random_games(conn, n=0, owned=False)
+    all_games = db.select_random_games(conn, n=0, owned=None)
     n_all_games = len(all_games)
     owned_games = db.select_random_games(conn, n=0, owned=True)
     n_owned_games = len(owned_games)
 
-    print('Total # games: ', str(n_all_games))
-    print('# owned games: ', str(n_owned_games))
-    print('# unowned games: ', str(n_all_games - n_owned_games))
+    print('selectable games: ', str(n_all_games))
+    print('owned selectable games: ', str(n_owned_games))
+    print('unowned selectable games: ', str(n_all_games - n_owned_games))
 
 
 def handle_select(args):
@@ -357,6 +379,11 @@ if __name__ == '__main__':
     # Parameters for printing game stats
     gamestats_parser = subparsers.add_parser('gamestats', help='Print stats on game in collection.')
     gamestats_parser.set_defaults(func=handle_gamestats)
+
+    # Parameters for resetting game availability
+    reset_parser = subparsers.add_parser('reset', help='Reset a game to be selectable.')
+    reset_parser.set_defaults(func=handle_reset)
+    reset_parser.add_argument('title', help='Title of game to reset.')
 
     # Parameters for modifying games
     # Punting on this due to CSV backend

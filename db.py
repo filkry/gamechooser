@@ -222,7 +222,7 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         if storefront is not None:
             conditions.append('storefront == "%s"' % storefront)
 
-        conditions.append('passes <= ' + str(max_passes))
+        conditions.append('(passes <= ' + str(max_passes) + ' OR eternal == 1)')
 
         select = '''SELECT id, title, release_year,
             linux, play_more, couch, passes, via, eternal,
@@ -280,6 +280,11 @@ def create_session(conn, game_id):
         conn.execute('INSERT INTO sessions(game_id, started) VALUES (?, ?)',
                 (game_id, date.today()))
 
+
+def reset_selectability(conn, game_id):
+    with conn:
+        conn.execute('UPDATE game SET passes = 0 WHERE id = ?', (game_id,))
+        conn.execute('UPDATE game SET next_valid_date = ? WHERE id = ?', (date.today(), game_id,))
 
 def inc_pass(conn, game_id):
     with conn:
