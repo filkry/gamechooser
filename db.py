@@ -13,7 +13,7 @@ def create_schema(conn):
         conn.execute('''CREATE TABLE game
             (id integer primary key autoincrement,
             title text, release_year integer, linux integer,
-            play_more integer, couch integer, passes integer,
+            play_more integer, couch integer, portable integer, passes integer,
             via text, eternal integer, next_valid_date datetime)''')
 
         conn.execute('''CREATE TABLE own
@@ -84,15 +84,15 @@ def add_ownership(conn, game_id, storefront):
     conn.execute('''insert into own(game_id, storefront) values(?, ?)''',
             (game_id, storefront))
 
-def add_game(conn, title, release_year, linux, play_more, couch, passes, via, eternal, storefronts):
+def add_game(conn, title, release_year, linux, play_more, couch, portable, passes, via, eternal, storefronts):
     c = conn.cursor()
 
     c.execute('''insert into
             game(title, release_year, linux, play_more,
-                couch, passes, via, eternal)
-            values(?, ?, ?, ?, ?, ?, ?, ?)''',
+                couch, portable, passes, via, eternal)
+            values(?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             (title, release_year, linux, play_more,
-                couch, passes, via, eternal))
+                couch, portable, passes, via, eternal))
     game_id = c.lastrowid
     assert(game_id != None)
 
@@ -107,7 +107,7 @@ def add_game(conn, title, release_year, linux, play_more, couch, passes, via, et
     return game_id
 
 def import_gdoc_games(conn, rows):
-    for title, release_year, linux, play_more, owned_on, couch, passes, via in rows:
+    for title, release_year, linux, play_more, owned_on, couch, portable, passes, via in rows:
         if title == 'title' or title == '':
             continue
 
@@ -116,10 +116,11 @@ def import_gdoc_games(conn, rows):
         linux = linux == 1 or linux == '1'
         play_more = play_more == 1 or play_more == '1'
         couch = couch == 1 or couch == '1'
+        portable = portable == 1 or portable == '1'
         passes = 0 if passes == '' or passes == 'eternal' else int(passes)
         eternal = 1 if passes == 'eternal' else 0
 
-        add_game(conn, title, release_year, linux, play_more, couch, passes, via, eternal, owned_on.split(','))
+        add_game(conn, title, release_year, linux, play_more, couch, portable, passes, via, eternal, owned_on.split(','))
 
 
 def dump_csvs(conn, fn_prefix):
@@ -127,11 +128,11 @@ def dump_csvs(conn, fn_prefix):
         with open("%s_game.csv" % fn_prefix, 'w') as game:
             writer = csv.writer(game, lineterminator='\n')
             writer.writerow(['id', 'title', 'release_year', 'linux',
-                'play_more', 'couch', 'passes', 'via',
+                'play_more', 'couch', 'portable', 'passes', 'via',
                 'eternal', 'next_valid_date'])
             for row in conn.execute('SELECT * FROM game'):
                 writer.writerow([row['id'], row['title'], row['release_year'],
-                        row['linux'], row['play_more'], row['couch'],
+                        row['linux'], row['play_more'], row['couch'], row['portable'],
                         row['passes'], row['via'], row['eternal'],
                         row['next_valid_date']])
 
@@ -159,9 +160,9 @@ def load_csvs(conn, fn_prefix):
                     row.append(None)
                 row = [(None if r == '' else r) for r in row]
                 conn.execute('''insert into game(id, title, release_year,
-                    linux, play_more, couch, passes, via, eternal,
+                    linux, play_more, couch, portable, passes, via, eternal,
                     next_valid_date)
-                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', row)
                     
         with open("%s_own.csv" % fn_prefix, 'r') as own:
             reader = csv.reader(own)
@@ -186,7 +187,7 @@ def storefronts(conn, gid):
         return [row['storefront'] for row in rows]
 
 def select_random_games(conn, n = 1, before_this_year = None, linux = None,
-        play_more = True, couch = None, max_passes = 2, owned=True,
+        play_more = True, couch = None, portable = None, max_passes = 2, owned=True,
         exclude_ids = [], storefront = None):
     with conn:
         # Construct query
@@ -214,6 +215,11 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         elif couch == False:
             conditions.append('couch == 0')
 
+        if portable == True:
+            conditions.append('portable == 1')
+        elif portable == False:
+            conditions.append('portable == 0')
+
         if owned == True:
             conditions.append('storefront NOT NULL')
         elif owned == False:
@@ -225,7 +231,7 @@ def select_random_games(conn, n = 1, before_this_year = None, linux = None,
         conditions.append('(passes <= ' + str(max_passes) + ' OR eternal == 1)')
 
         select = '''SELECT id, title, release_year,
-            linux, play_more, couch, passes, via, eternal,
+            linux, play_more, couch, portable, passes, via, eternal,
             next_valid_date
             FROM game LEFT OUTER JOIN own ON own.game_id=game.id'''
 

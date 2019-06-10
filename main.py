@@ -43,10 +43,11 @@ def handle_add(args):
     year = int(year) if len(year) > 0 else None
     linux = True if input("Linux (y/n): ").lower() == 'y' else False
     couch = True if input("Couch playable (y/n): ").lower() == 'y' else False
+    portable = True if input("Portable (y/n): ").lower() == 'y' else False
     via = input("Via: ")
     owned_on = input("Owned platforms (comma separated): ").split(',')
 
-    db.add_game(conn, title, year, linux, True, couch, 0, via, None, owned_on)
+    db.add_game(conn, title, year, linux, True, couch, portable, 0, via, None, owned_on)
 
     db.dump_csvs(conn, path)
 
@@ -157,13 +158,13 @@ def handle_select(args):
             owned = False
 
         games = db.select_random_games(conn, n = args.n, before_this_year = True if args.old else None,
-                linux = True if args.linux else None, couch = True if args.couch else None,
+                linux = True if args.linux else None, couch = True if args.couch else None, portable = True if args.portable else None,
                 owned = owned, max_passes = args.max_passes,
                 exclude_ids = passed_ids, storefront = args.storefront)
 
         annotate_platforms(conn, games)
         print(rp.format_records(games,
-            ['title', 'linux', 'couch', 'platforms', 'via'],
+            ['title', 'linux', 'couch', 'portable', 'platforms', 'via'],
             header = True, nums = True))
 
         # If we're just displaying a selection, finish here
@@ -212,6 +213,8 @@ def handle_select(args):
                     db.set_next_valid_date(conn, game['id'],
                         date.today() + datetime.timedelta(days = 90))
                 
+        elif selection == -1:
+            continue
         else:
             # Create an active session
             game = games[selection - 1]
@@ -346,6 +349,8 @@ if __name__ == '__main__':
     select_parser.add_argument('-l', '--linux', help='Only select games available on linux.',
             action='store_true')
     select_parser.add_argument('-c', '--couch',help='Only select games playable on couch.',
+            action='store_true')
+    select_parser.add_argument('-po', '--portable',help='Only select games playable portably.',
             action='store_true')
     select_parser.add_argument('-o', '--old', help='Only select games from before this year.',
             action='store_true')

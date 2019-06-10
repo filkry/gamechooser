@@ -15,6 +15,7 @@ column_format = {
     'release_year': '>4',
     'linux': '>5',
     'couch': '>5',
+    'portable': '>5',
     'play_more': '>4',
     'via': '<20.20',
     'platforms': '<20.20',
