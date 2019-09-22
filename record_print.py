@@ -7,15 +7,15 @@ column_aliases = {
 
 def alias_replace(col):
     if col in column_aliases:
-        return column_aliases[col]
-    return col
+        return column_aliases[col].upper()
+    return col.upper()
 
 column_format = {
     'title': '<40.40',
     'release_year': '>4',
     'linux': '>5',
     'couch': '>5',
-    'portable': '>5',
+    'portable': '>8',
     'play_more': '>4',
     'via': '<20.20',
     'platforms': '<20.20',
@@ -40,7 +40,7 @@ def format_record(record, columns):
     return output
 
 def prepend_num(string, num_digits, num = None):
-    line = [] 
+    line = []
     if num is None:
         line.append(' ' * (num_digits + 2))
     else:
@@ -58,7 +58,7 @@ def format_records(records, columns, header=False, nums=False):
         line = format_record(col_record, columns)
         if nums:
             line = prepend_num(line, num_digits)
-        output.append('\033[1m' + line + '\033[0m')
+        output.append(line)
 
     for i, r in enumerate(records):
         line = format_record(r, columns)

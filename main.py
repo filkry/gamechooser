@@ -108,7 +108,7 @@ def handle_search(args):
         columns.append('passes')
     if args.eternal:
         columns.append('eternal')
-    
+
     print(rp.format_records(games, columns, header=True))
 
 def handle_reset(args):
@@ -163,6 +163,7 @@ def handle_select(args):
                 exclude_ids = passed_ids, storefront = args.storefront)
 
         annotate_platforms(conn, games)
+        print("")
         print(rp.format_records(games,
             ['title', 'linux', 'couch', 'portable', 'platforms', 'via'],
             header = True, nums = True))
@@ -171,7 +172,7 @@ def handle_select(args):
         if not args.pick:
             break
 
-        print('\nChoose a game to create a new active session for. Input 0 to pass on all games. Q to abort.')
+        print('\nChoose a game to create a new active session for. Input 0 to pass on all games. -1 to push timer without passing (i.e. too expensive). Q to abort.')
         selection = input("Selection: ")
 
         if selection == 'q' or selection == 'Q':
@@ -185,7 +186,7 @@ def handle_select(args):
                 # Don't propose game again
                 passed_ids.append(game['id'])
 
-                # If eternal still undecided 
+                # If eternal still undecided
                 # give option to make eternal
                 if game['eternal'] is None:
                     eternal = input('Should this game never stop being proposed? Y/N/P[ass]: ')
@@ -205,15 +206,19 @@ def handle_select(args):
                 # Delay next possible proposal according to passes
                 if new_passes == 1:
                     db.set_next_valid_date(conn, game['id'],
-                        date.today() + datetime.timedelta(days = 7))
+                        date.today() + datetime.timedelta(days = 30))
                 elif new_passes == 2:
                     db.set_next_valid_date(conn, game['id'],
-                        date.today() + datetime.timedelta(days = 30))
+                        date.today() + datetime.timedelta(days = 90))
                 else:
                     db.set_next_valid_date(conn, game['id'],
-                        date.today() + datetime.timedelta(days = 90))
-                
+                        date.today() + datetime.timedelta(days = 180))
+
         elif selection == -1:
+            for game in games:
+                db.set_next_valid_date(conn, game['id'],
+                    date.today() + datetime.timedelta(days = 90))
+
             continue
         else:
             # Create an active session
@@ -288,7 +293,7 @@ Input response: ''' % finish_session['title'])
 
     db.dump_csvs(conn, path)
 
-    
+
 if __name__ == '__main__':
     configpath = os.path.expanduser("~/.gamechooser")
     if not os.path.exists(configpath):
@@ -318,7 +323,7 @@ if __name__ == '__main__':
     sessions_parser.add_argument('-c', '--column',
             help='Print a column in addition to the defaults.',
             action='append')
-        
+
     sessions_parser.set_defaults(func=handle_sessions)
 
     # Parameters for finishing sessions
