@@ -189,7 +189,7 @@ def handle_select(args):
 
             try:
                 selection = int(selection)
-                if selection <= len(games):
+                if selection >= -1 and selection <= len(games):
                     valid_selection = True
                     break
             except ValueError:
