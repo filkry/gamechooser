@@ -150,7 +150,8 @@ def handle_select(args):
     conn, path = instantiate_db(True)
 
     passed_ids = []
-    while True:
+    abort = False
+    while not abort:
         owned = True
         if args.buy:
             owned = None
@@ -162,6 +163,11 @@ def handle_select(args):
                 owned = owned, max_passes = args.max_passes,
                 exclude_ids = passed_ids, storefront = args.storefront)
 
+        if len(games) == 0:
+            abort = True
+            print("That's all of the games! It's over.")
+            break
+
         annotate_platforms(conn, games)
         print("")
         print(rp.format_records(games,
@@ -172,13 +178,27 @@ def handle_select(args):
         if not args.pick:
             break
 
-        print('\nChoose a game to create a new active session for. Input 0 to pass on all games. -1 to push timer without passing (i.e. too expensive). Q to abort.')
-        selection = input("Selection: ")
+        valid_selection = False
+        while not valid_selection:
+            print('\nChoose a game to create a new active session for. Input 0 to pass on all games. -1 to push timer without passing (i.e. too expensive). Q to abort.')
+            selection = input("Selection: ")
 
-        if selection == 'q' or selection == 'Q':
-            break
+            if selection == 'q' or selection == 'Q':
+                abort = True;
+                break
 
-        selection = int(selection)
+            try:
+                selection = int(selection)
+                if selection <= len(games):
+                    valid_selection = True
+                    break
+            except ValueError:
+                pass
+
+            print('Invalid input, try again.')
+
+        if abort:
+            continue
 
         if selection == 0:
             # Increment the pass counter on each game
